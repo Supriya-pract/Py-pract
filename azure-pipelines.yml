@@ -4,7 +4,9 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  name: self-hosted-linux
+  demands:
+    - agent.name -equals agent1
 
 stages:
 - stage: Build
