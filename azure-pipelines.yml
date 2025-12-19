@@ -34,8 +34,8 @@ stages:
     - script: |
         cd app
         source venv/bin/activate
-        python app.py || echo "App run skipped"
-      displayName: Run App
+        python -m py_compile app.py
+      displayName: validate flask app
 
     - task: Docker@2
       displayName: Build and Push Docker Image
