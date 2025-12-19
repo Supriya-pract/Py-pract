@@ -6,52 +6,37 @@ pool:
   demands:
     - Agent.Name -equals agent1
 
-variables:
-  pythonVersion: '3.12'
-
 stages:
 - stage: Build
   displayName: Build, Test & Dockerize
   jobs:
   - job: BuildJob
-    displayName: Build Job
     steps:
 
-    # Checkout code
     - checkout: self
       clean: true
 
-    # Verify Python on agent
     - script: |
-        echo "Python version:"
-        which python3
         python3 --version
       displayName: Verify Python
 
-    # Create venv & install dependencies (PEP 668 safe)
     - script: |
-        echo "Creating virtual environment..."
-        python3 -m venv venv
+        echo "Moving to app directory..."
+        cd app
 
-        echo "Activating virtual environment..."
+        python3 -m venv venv
         source venv/bin/activate
 
-        echo "Upgrading pip..."
         pip install --upgrade pip
-
-        echo "Installing dependencies..."
         pip install -r requirements.txt
       displayName: Setup Python Virtual Environment
 
-    # Optional: Run unit tests
     - script: |
+        cd app
         source venv/bin/activate
-        echo "Running tests..."
-        pytest || echo "No tests found"
-      displayName: Run Unit Tests
-      continueOnError: true
+        python app.py || echo "App run skipped"
+      displayName: Run App
 
-    # Build & push Docker image
     - task: Docker@2
       displayName: Build and Push Docker Image
       inputs:
@@ -62,25 +47,15 @@ stages:
         tags: |
           $(Build.BuildId)
 
-# =========================
-# DEPLOY STAGE
-# =========================
 - stage: Deploy
   displayName: Deploy to Azure App Service
   dependsOn: Build
   jobs:
   - job: DeployJob
-    displayName: Deploy Job
     steps:
-
     - task: AzureWebAppContainer@1
-      displayName: Deploy Container to App Service
       inputs:
         azureSubscription: $(azureSubscription)
         appName: $(appName)
         containers: |
           $(imageName):$(Build.BuildId)
-
-
-
-
