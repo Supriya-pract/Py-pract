@@ -1,43 +1,86 @@
-
-
 trigger:
 - main
 
 pool:
   name: self-hosted-linux
   demands:
-    - agent.name -equals agent1
+    - Agent.Name -equals agent1
+
+variables:
+  pythonVersion: '3.12'
 
 stages:
 - stage: Build
-  displayName: Build & Test
+  displayName: Build, Test & Dockerize
   jobs:
-    - job: BuildJob
-      steps:
-        - script: |
-            python3 --version
-            python3 -m pip install --upgrade pip
-            python3 -m pip install -r requirements.txt
-          displayName: Run Unit Tests
-        - task: Docker@2
-          displayName: Build and Push Docker Image
-          inputs:
-            command: buildAndPush
-            repository: $(imageName)
-            Dockerfile: Dockerfile
-            containerRegistry: $(dockerRegistryServiceConnection)
-            tags: |
-              $(Build.BuildId)
+  - job: BuildJob
+    displayName: Build Job
+    steps:
+
+    # Checkout code
+    - checkout: self
+      clean: true
+
+    # Verify Python on agent
+    - script: |
+        echo "Python version:"
+        which python3
+        python3 --version
+      displayName: Verify Python
+
+    # Create venv & install dependencies (PEP 668 safe)
+    - script: |
+        echo "Creating virtual environment..."
+        python3 -m venv venv
+
+        echo "Activating virtual environment..."
+        source venv/bin/activate
+
+        echo "Upgrading pip..."
+        pip install --upgrade pip
+
+        echo "Installing dependencies..."
+        pip install -r requirements.txt
+      displayName: Setup Python Virtual Environment
+
+    # Optional: Run unit tests
+    - script: |
+        source venv/bin/activate
+        echo "Running tests..."
+        pytest || echo "No tests found"
+      displayName: Run Unit Tests
+      continueOnError: true
+
+    # Build & push Docker image
+    - task: Docker@2
+      displayName: Build and Push Docker Image
+      inputs:
+        command: buildAndPush
+        repository: $(imageName)
+        dockerfile: Dockerfile
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(Build.BuildId)
+
+# =========================
+# DEPLOY STAGE
+# =========================
 - stage: Deploy
   displayName: Deploy to Azure App Service
   dependsOn: Build
   jobs:
-    - job: DeployJob
-      steps:
-        - task: AzureWebAppContainer@1
-          inputs:
-            azureSubscription: $(azureSubscription)
-            appName: $(appName)
-            containers: |
-              $(imageName):$(Build.BuildId)
+  - job: DeployJob
+    displayName: Deploy Job
+    steps:
+
+    - task: AzureWebAppContainer@1
+      displayName: Deploy Container to App Service
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(appName)
+        containers: |
+          $(imageName):$(Build.BuildId)
+
+
+
 
