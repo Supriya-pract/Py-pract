@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: supriyapractpypract 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: supriyapractpypract
+  template:
+    metadata:
+      labels:
+        app: supriyapractpypract 
+    spec:
+      containers:
+        - name: supriyapractpypract 
+          image: pyazuredevops.azurecr.io/supriyapractpypract
+          ports:
+          - containerPort: 5000
