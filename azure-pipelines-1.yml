@@ -29,7 +29,7 @@ stages:
     - task: KubernetesManifest@0
       inputs:
         action: deploy
-        kubernetesServiceConnection: azure-aks-conn
+        kubernetesServiceConnection: aks-devops-cluster-default
         manifests: |
           k8s/deployment.yaml
           k8s/service.yaml
