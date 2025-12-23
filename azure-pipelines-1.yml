@@ -5,6 +5,11 @@ variables:
   imageName: py-app
   acrName: pyazuredevops.azurecr.io
 
+pool:
+  name: self-hosted-linux
+  demands:
+    - Agent.Name -equals agent1
+
 stages:
 - stage: Build
   jobs:
