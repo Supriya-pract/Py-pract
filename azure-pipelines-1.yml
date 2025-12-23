@@ -19,7 +19,7 @@ stages:
         command: buildAndPush
         repository: $(imageName)
         dockerfile: Dockerfile
-        containerRegistry: acr-conn
+        containerRegistry: pyAzureDevops
         tags: latest
 
 - stage: Deploy
